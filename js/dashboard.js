@@ -5,6 +5,7 @@ import {
   rangoMes,
   marcarCompletada,
   formatearHora,
+  formatearFecha,
   colorClaseIglesia,
 } from "./visitas.js";
 import { abrirDetalleVisita } from "./modal.js";
@@ -17,6 +18,7 @@ import { versiculoDeHoy } from "./versiculos.js";
 let visitasHoyCache = [];
 let seguimientosVisitasCache = [];
 let miembrosContactoCache = [];
+let visitasMesCache = [];
 
 export function initDashboard() {
   document.getElementById("saludo-eyebrow").textContent = saludoSegunHora();
@@ -59,14 +61,16 @@ export function initDashboard() {
   const hoy = new Date();
   const { inicio, fin } = rangoMes(hoy.getFullYear(), hoy.getMonth());
   listenVisitasRango(inicio, fin, (visitasMes) => {
+    visitasMesCache = visitasMes;
     const completadas = visitasMes.filter((v) => v.estado === "completada").length;
     const pendientes = visitasMes.filter((v) => v.estado !== "completada").length;
     document.getElementById("stat-row").innerHTML = `
-      <div class="stat-pill"><div class="num">${visitasMes.length}</div><div class="label">Visitas este mes</div></div>
-      <div class="stat-pill"><div class="num">${completadas}</div><div class="label">Completadas</div></div>
-      <div class="stat-pill"><div class="num">${pendientes}</div><div class="label">Pendientes</div></div>
+      <div class="stat-pill" data-tipo="todas"><div class="num">${visitasMes.length}</div><div class="label">Visitas este mes</div></div>
+      <div class="stat-pill" data-tipo="completada"><div class="num">${completadas}</div><div class="label">Completadas</div></div>
+      <div class="stat-pill" data-tipo="pendiente"><div class="num">${pendientes}</div><div class="label">Pendientes</div></div>
     `;
   });
+  wireStatRow();
 
   listenSeguimientosPendientes((visitas) => {
     seguimientosVisitasCache = visitas;
@@ -76,6 +80,77 @@ export function initDashboard() {
     miembrosContactoCache = miembros;
     renderRecordatorioContacto();
   });
+}
+
+const ETIQUETAS_TIPO = {
+  todas: "Visitas este mes",
+  completada: "Completadas este mes",
+  pendiente: "Pendientes este mes",
+};
+
+function wireStatRow() {
+  const statRow = document.getElementById("stat-row");
+  let timer = null;
+  let activo = false;
+
+  statRow.addEventListener("pointerdown", (e) => {
+    const pill = e.target.closest(".stat-pill");
+    if (!pill) return;
+    activo = false;
+    timer = setTimeout(() => {
+      activo = true;
+      mostrarPreviaMes(pill.dataset.tipo);
+    }, 400);
+  });
+
+  const cancelar = () => {
+    clearTimeout(timer);
+    ocultarPreviaMes();
+  };
+  statRow.addEventListener("pointerup", cancelar);
+  statRow.addEventListener("pointerleave", cancelar);
+  statRow.addEventListener("pointercancel", cancelar);
+
+  statRow.addEventListener("click", (e) => {
+    const fueLongPress = activo;
+    activo = false;
+    if (fueLongPress) e.preventDefault();
+  });
+}
+
+function mostrarPreviaMes(tipo) {
+  const filtradas =
+    tipo === "completada"
+      ? visitasMesCache.filter((v) => v.estado === "completada")
+      : tipo === "pendiente"
+      ? visitasMesCache.filter((v) => v.estado !== "completada")
+      : visitasMesCache;
+
+  const preview = document.getElementById("stat-preview");
+  preview.innerHTML = `
+    <div class="stat-preview-title">${ETIQUETAS_TIPO[tipo] || "Visitas"}</div>
+    ${
+      filtradas.length === 0
+        ? `<div class="stat-preview-empty">Sin visitas en esta categoría.</div>`
+        : `<ul class="stat-preview-list">
+            ${filtradas
+              .map(
+                (v) => `
+              <li>
+                <span class="church-dot ${colorClaseIglesia(v.iglesia)}"></span>
+                <span class="stat-preview-nombre">${escapeHtml(v.feligres?.nombre || "(sin nombre)")}</span>
+                <span class="stat-preview-fecha">${formatearFecha(v.fecha)} · ${formatearHora(v.fecha)}</span>
+              </li>`
+              )
+              .join("")}
+          </ul>`
+    }
+  `;
+  preview.classList.add("show");
+}
+
+function ocultarPreviaMes() {
+  document.getElementById("stat-preview").classList.remove("show");
 }
 
 function wireLista(listaEl) {
