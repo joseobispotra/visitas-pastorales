@@ -3,12 +3,13 @@ import { initDashboard } from "./dashboard.js";
 import { initMensual } from "./mensual.js";
 import { initNotificaciones } from "./notificaciones.js";
 import { crearVisita } from "./visitas.js";
-import { initMiembros, obtenerOCrearMiembro } from "./miembros.js";
+import { initMiembros, obtenerOCrearMiembro, obtenerMiembrosCache } from "./miembros.js";
 import { initPeticiones } from "./peticiones.js";
 import { initCalendario } from "./calendario.js";
 import { initJunta } from "./junta.js";
 import { initTareas } from "./tareas.js";
 import { mostrarToast } from "./toast.js";
+import { escapeHtml } from "./util.js";
 
 const ROUTES = ["hoy", "agendar", "miembros", "oracion", "mensual", "gestion"];
 let inicializado = false;
@@ -60,6 +61,9 @@ function wireFormAgendar() {
   const tabs = document.querySelectorAll("#iglesia-tabs .church-tab");
   const chkSeguimiento = document.getElementById("requiere-seguimiento");
   const fechaSeguimiento = document.getElementById("fecha-seguimiento");
+  const nombreInput = document.getElementById("nombre");
+  const telefonoInput = document.getElementById("telefono");
+  const direccionInput = document.getElementById("direccion");
   let iglesiaSeleccionada = null;
 
   tabs.forEach((tab) => {
@@ -73,6 +77,41 @@ function wireFormAgendar() {
   chkSeguimiento.addEventListener("change", () => {
     fechaSeguimiento.style.display = chkSeguimiento.checked ? "block" : "none";
     if (!chkSeguimiento.checked) fechaSeguimiento.value = "";
+  });
+
+  function poblarDatalistMiembros() {
+    const vistos = new Set();
+    const datalist = document.getElementById("miembros-datalist");
+    datalist.innerHTML = obtenerMiembrosCache()
+      .filter((m) => {
+        const clave = m.nombre.trim().toLowerCase();
+        if (vistos.has(clave)) return false;
+        vistos.add(clave);
+        return true;
+      })
+      .map((m) => `<option value="${escapeHtml(m.nombre)}">`)
+      .join("");
+  }
+  poblarDatalistMiembros();
+
+  nombreInput.addEventListener("focus", poblarDatalistMiembros);
+
+  nombreInput.addEventListener("input", () => {
+    const valor = nombreInput.value.trim().toLowerCase();
+    if (!valor) return;
+    const miembro = obtenerMiembrosCache().find((m) => m.nombre.trim().toLowerCase() === valor);
+    if (!miembro) return;
+
+    if (!telefonoInput.value.trim() && miembro.telefono) telefonoInput.value = miembro.telefono;
+    if (!direccionInput.value.trim() && miembro.direccion) direccionInput.value = miembro.direccion;
+    if (!iglesiaSeleccionada && miembro.iglesia) {
+      const tabMiembro = [...tabs].find((t) => t.dataset.value === miembro.iglesia);
+      if (tabMiembro) {
+        tabs.forEach((t) => t.classList.remove("active"));
+        tabMiembro.classList.add("active");
+        iglesiaSeleccionada = miembro.iglesia;
+      }
+    }
   });
 
   form.addEventListener("submit", async (e) => {
