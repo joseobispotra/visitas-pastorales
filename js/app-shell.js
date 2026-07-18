@@ -5,9 +5,12 @@ import { initNotificaciones } from "./notificaciones.js";
 import { crearVisita } from "./visitas.js";
 import { initMiembros, obtenerOCrearMiembro } from "./miembros.js";
 import { initPeticiones } from "./peticiones.js";
+import { initCalendario } from "./calendario.js";
+import { initJunta } from "./junta.js";
+import { initTareas } from "./tareas.js";
 import { mostrarToast } from "./toast.js";
 
-const ROUTES = ["hoy", "agendar", "miembros", "oracion", "mensual"];
+const ROUTES = ["hoy", "agendar", "miembros", "oracion", "mensual", "gestion"];
 let inicializado = false;
 
 requerirSesion(async () => {
@@ -20,10 +23,14 @@ requerirSesion(async () => {
   initMensual();
   initMiembros();
   initPeticiones();
+  initCalendario();
+  initJunta();
+  initTareas();
   initNotificaciones();
   wireRouting();
   wireLogout();
   wireFormAgendar();
+  wireGestionSubtabs();
 });
 
 function wireRouting() {
@@ -134,5 +141,17 @@ function wireFormAgendar() {
       btn.disabled = false;
       btn.textContent = "Agendar visita";
     }
+  });
+}
+
+function wireGestionSubtabs() {
+  const tabs = document.querySelectorAll("#gestion-subtabs .church-tab");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      document.querySelectorAll(".gestion-subview").forEach((v) => v.classList.remove("active"));
+      document.getElementById(`subview-${tab.dataset.subview}`).classList.add("active");
+    });
   });
 }

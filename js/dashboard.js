@@ -15,11 +15,17 @@ import { mostrarToast } from "./toast.js";
 import { escapeHtml, saludoSegunHora, fechaLarga, telefonoWhatsApp } from "./util.js";
 import { notificarVisitasHoy } from "./notificaciones.js";
 import { versiculoDeHoy } from "./versiculos.js";
+import { listenEventosProximos } from "./calendario.js";
+import { listenTemasPendientes } from "./junta.js";
+import { listenTareasPendientes } from "./tareas.js";
 
 let visitasHoyCache = [];
 let seguimientosVisitasCache = [];
 let miembrosContactoCache = [];
 let visitasMesCache = [];
+let eventosProximosCache = [];
+let temasPendientesCache = [];
+let tareasPendientesCache = [];
 
 export function initDashboard() {
   document.getElementById("saludo-eyebrow").textContent = saludoSegunHora();
@@ -82,6 +88,37 @@ export function initDashboard() {
     renderRecordatorioContacto();
   });
   wireRecordatorioContacto();
+
+  listenEventosProximos((eventos) => {
+    eventosProximosCache = eventos;
+    renderResumenGestion();
+  });
+  listenTemasPendientes((temas) => {
+    temasPendientesCache = temas;
+    renderResumenGestion();
+  });
+  listenTareasPendientes((tareas) => {
+    tareasPendientesCache = tareas;
+    renderResumenGestion();
+  });
+}
+
+function renderResumenGestion() {
+  const slot = document.getElementById("resumen-gestion-slot");
+  if (!slot) return;
+  slot.innerHTML = `
+    <div class="card">
+      <div class="page-header">
+        <h2>Gestión</h2>
+        <p>Resumen administrativo</p>
+      </div>
+      <div class="mini-stats">
+        <a class="mini-stat" href="#/gestion"><div class="num">${eventosProximosCache.length}</div><div class="label">Próximos eventos</div></a>
+        <a class="mini-stat" href="#/gestion"><div class="num">${temasPendientesCache.length}</div><div class="label">Temas de junta pendientes</div></a>
+        <a class="mini-stat" href="#/gestion"><div class="num">${tareasPendientesCache.length}</div><div class="label">Tareas pendientes</div></a>
+      </div>
+    </div>
+  `;
 }
 
 const ETIQUETAS_TIPO = {

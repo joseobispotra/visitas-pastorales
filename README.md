@@ -1,14 +1,14 @@
-# Visitas Pastorales — José Obispo
+# Pastor360 — José Obispo
 
-App web para registrar y agendar visitas pastorales a las iglesias **Molinuevo**, **Luz de Ozama** y **Effatá**. Funciona desde el teléfono o la PC, sincroniza los datos en la nube (Firebase) y puede instalarse como app (PWA).
+App web de administración pastoral para las iglesias **Molinuevo**, **Luz de Ozama** y **Effatá**: visitas, directorio de miembros, peticiones de oración, calendario de actividades, temas de junta y tareas. Funciona desde el teléfono o la PC, sincroniza los datos en la nube (Firebase) y puede instalarse como app (PWA).
 
 Es un sitio 100% estático (HTML/CSS/JS, sin paso de compilación), así que se puede desplegar tal cual en Vercel.
 
 ## 1. Crear el proyecto de Firebase (gratis)
 
 1. Entra a [console.firebase.google.com](https://console.firebase.google.com) e inicia sesión con tu cuenta de Google.
-2. **Agregar proyecto** → nómbralo, por ejemplo, `visitas-pastorales` → puedes desactivar Google Analytics (no hace falta).
-3. Dentro del proyecto, click en el ícono **Web `</>`** para registrar una app web. Ponle un apodo (ej. "Visitas Pastorales Web") y **no** marques Firebase Hosting.
+2. **Agregar proyecto** → nómbralo, por ejemplo, `pastor360` → puedes desactivar Google Analytics (no hace falta).
+3. Dentro del proyecto, click en el ícono **Web `</>`** para registrar una app web. Ponle un apodo (ej. "Pastor360 Web") y **no** marques Firebase Hosting.
 4. Copia el objeto `firebaseConfig` que te muestra (apiKey, authDomain, projectId, etc.).
 
 ### Activar Authentication
@@ -63,7 +63,7 @@ Abre `http://localhost:8080` en el navegador, inicia sesión con el usuario que 
 cd visitas-pastorales
 git init
 git add .
-git commit -m "Visitas Pastorales - versión inicial"
+git commit -m "Pastor360 - versión inicial"
 ```
 
 Crea un repositorio vacío en [github.com/new](https://github.com/new) (sin README, sin .gitignore) y luego:
@@ -95,7 +95,7 @@ Cuando abres la app y tienes visitas agendadas para hoy, se activa automáticame
 
 ```
 index.html                 Pantalla de login
-app.html                   Aplicación (Hoy / Agendar / Mensual)
+app.html                   Aplicación (Hoy / Agendar / Miembros / Oración / Mensual / Gestión)
 manifest.json              Configuración de PWA
 firebase-messaging-sw.js   Service worker de notificaciones push
 css/styles.css             Estilos
@@ -106,6 +106,9 @@ js/dashboard.js            Vista "Hoy"
 js/mensual.js              Vista mensual (lista + gráfico de pastel)
 js/modal.js                Ventana de detalle/edición de una visita
 js/notificaciones.js       Notificaciones push
+js/calendario.js           Calendario de actividades (Gestión)
+js/junta.js                Temas de junta (Gestión)
+js/tareas.js               Tareas y subtareas (Gestión)
 js/app-shell.js            Navegación y formulario de "Agendar"
 js/util.js                 Funciones de formato compartidas
 assets/                    Ilustración de fondo e íconos

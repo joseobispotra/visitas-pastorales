@@ -1,7 +1,7 @@
 {
-  "name": "Visitas Pastorales - José Obispo",
-  "short_name": "Visitas Pastorales",
-  "description": "Registro y agenda de visitas pastorales para Molinuevo, Luz de Ozama y Effatá",
+  "name": "Pastor360 - José Obispo",
+  "short_name": "Pastor360",
+  "description": "Administración pastoral: visitas, miembros, calendario, junta y tareas — Molinuevo, Luz de Ozama y Effatá",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",

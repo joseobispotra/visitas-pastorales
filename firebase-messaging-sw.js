@@ -16,7 +16,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const titulo = payload.notification?.title || "Visitas Pastorales";
+  const titulo = payload.notification?.title || "Pastor360";
   const cuerpo = payload.notification?.body || "";
   self.registration.showNotification(titulo, {
     body: cuerpo,

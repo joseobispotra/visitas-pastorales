@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Visitas Pastorales - José Obispo</title>
+<title>Pastor360 - José Obispo</title>
 <meta name="theme-color" content="#16213e">
 <link rel="icon" href="assets/icons/icon-192.png">
 <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
@@ -17,13 +17,14 @@
 
 <div class="app-shell" id="app-shell" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="crest">🐑</span> Visitas Pastorales <span class="brand-sub">— José Obispo</span></div>
+    <div class="brand"><span class="crest">🐑</span> Pastor360 <span class="brand-sub">— José Obispo</span></div>
     <nav id="nav-links">
       <a href="#/hoy" data-route="hoy">Hoy</a>
       <a href="#/agendar" data-route="agendar">Agendar</a>
       <a href="#/miembros" data-route="miembros">Miembros</a>
       <a href="#/oracion" data-route="oracion">Oración</a>
       <a href="#/mensual" data-route="mensual">Mensual</a>
+      <a href="#/gestion" data-route="gestion">Gestión</a>
     </nav>
     <button class="logout-btn" id="logout-btn" type="button">Salir</button>
   </header>
@@ -49,6 +50,8 @@
       <div class="card verse-card" id="verse-card"></div>
 
       <div id="seguimiento-card-slot"></div>
+
+      <div id="resumen-gestion-slot"></div>
 
       <div class="card">
         <div class="page-header">
@@ -241,6 +244,71 @@
         <ul class="visit-list" id="lista-oraciones-respondidas"></ul>
       </div>
     </section>
+
+    <!-- GESTIÓN -->
+    <section id="view-gestion" class="view">
+      <div class="page-header">
+        <h2>Gestión</h2>
+        <p>Calendario, temas de junta y tareas administrativas</p>
+      </div>
+
+      <div class="church-tabs" id="gestion-subtabs">
+        <div class="church-tab active" data-subview="calendario">🗓️ Calendario</div>
+        <div class="church-tab" data-subview="junta">📋 Junta</div>
+        <div class="church-tab" data-subview="tareas">✅ Tareas</div>
+      </div>
+
+      <div class="gestion-subview active" id="subview-calendario">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2>Calendario de actividades</h2>
+            <p>Eventos y actividades de la iglesia</p>
+          </div>
+          <button type="button" class="btn btn-solid" id="btn-nuevo-evento" style="width:auto;">+ Nuevo evento</button>
+        </div>
+        <div class="card">
+          <ul class="visit-list" id="lista-eventos"></ul>
+        </div>
+      </div>
+
+      <div class="gestion-subview" id="subview-junta">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2>Temas de junta</h2>
+            <p>Seguimiento de asuntos pendientes de la junta directiva</p>
+          </div>
+          <button type="button" class="btn btn-solid" id="btn-nuevo-tema" style="width:auto;">+ Nuevo tema</button>
+        </div>
+        <div class="church-tabs" id="filtro-iglesia-junta">
+          <div class="church-tab active" data-value="todas">Todas</div>
+          <div class="church-tab" data-value="Molinuevo">🟡 Molinuevo</div>
+          <div class="church-tab" data-value="Luz de Ozama">🔵 Luz de Ozama</div>
+          <div class="church-tab" data-value="Effatá">🟣 Effatá</div>
+        </div>
+        <div class="church-tabs" id="filtro-estado-junta">
+          <div class="church-tab active" data-value="todos">Todos</div>
+          <div class="church-tab" data-value="pendiente">Pendientes</div>
+          <div class="church-tab" data-value="en_progreso">En progreso</div>
+          <div class="church-tab" data-value="resuelto">Resueltos</div>
+        </div>
+        <div class="card">
+          <ul class="visit-list" id="lista-junta"></ul>
+        </div>
+      </div>
+
+      <div class="gestion-subview" id="subview-tareas">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2>Tareas</h2>
+            <p>Tareas y subtareas administrativas</p>
+          </div>
+          <button type="button" class="btn btn-solid" id="btn-nueva-tarea" style="width:auto;">+ Nueva tarea</button>
+        </div>
+        <div class="card">
+          <ul class="visit-list" id="lista-tareas"></ul>
+        </div>
+      </div>
+    </section>
   </main>
 
   <nav class="tabbar" id="tabbar">
@@ -249,6 +317,7 @@
     <a href="#/miembros" data-route="miembros"><span class="fab-icon">👤</span>Miembros</a>
     <a href="#/oracion" data-route="oracion"><span class="fab-icon">🙏</span>Oración</a>
     <a href="#/mensual" data-route="mensual"><span class="fab-icon">📊</span>Mensual</a>
+    <a href="#/gestion" data-route="gestion"><span class="fab-icon">🗂️</span>Gestión</a>
   </nav>
 </div>
 
@@ -270,6 +339,9 @@
 <script type="module" src="js/modal.js"></script>
 <script type="module" src="js/miembros.js"></script>
 <script type="module" src="js/peticiones.js"></script>
+<script type="module" src="js/calendario.js"></script>
+<script type="module" src="js/junta.js"></script>
+<script type="module" src="js/tareas.js"></script>
 <script type="module" src="js/dashboard.js"></script>
 <script type="module" src="js/mensual.js"></script>
 <script type="module" src="js/notificaciones.js"></script>
