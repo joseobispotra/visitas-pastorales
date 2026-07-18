@@ -620,6 +620,9 @@ a.icon-btn { text-decoration: none; }
 .gestion-subview { display: none; }
 .gestion-subview.active { display: block; animation: fadeIn .3s ease both; }
 
+.mensual-subview { display: none; }
+.mensual-subview.active { display: block; animation: fadeIn .3s ease both; }
+
 .badge-en_progreso { background: #dbe8f5; color: #2a5b8a; }
 .badge-resuelto { background: #dcecdf; color: #2f6b45; }
 .badge-prioridad-alta { background: #f1dede; color: #a1443a; }

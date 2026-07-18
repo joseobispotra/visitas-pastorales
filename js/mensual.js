@@ -1,4 +1,5 @@
 import { listenVisitasRango, rangoMes, formatearFecha, colorClaseIglesia } from "./visitas.js";
+import { listenContactosRango } from "./miembros.js";
 import { abrirDetalleVisita } from "./modal.js";
 import { listenPeticionesRespondidas } from "./peticiones.js";
 import { escapeHtml, nombreMes } from "./util.js";
@@ -10,21 +11,30 @@ export function initMensual() {
   let year = hoy.getFullYear();
   let month = hoy.getMonth();
   let filtro = "Todas";
-  let unsubscribe = null;
+  let unsubscribeVisitas = null;
+  let unsubscribeContactos = null;
   let visitasCache = [];
+  let contactosCache = [];
   let chart = null;
+  let chartLlamadas = null;
 
   const mesLabel = document.getElementById("mes-label");
   const listaEl = document.getElementById("lista-mensual");
+  const listaLlamadasEl = document.getElementById("lista-llamadas-mensual");
   const filtroTabs = document.querySelectorAll("#filtro-iglesia .church-tab");
 
   function cargarMes() {
-    if (unsubscribe) unsubscribe();
+    if (unsubscribeVisitas) unsubscribeVisitas();
+    if (unsubscribeContactos) unsubscribeContactos();
     mesLabel.textContent = nombreMes(year, month);
     const { inicio, fin } = rangoMes(year, month);
-    unsubscribe = listenVisitasRango(inicio, fin, (visitas) => {
+    unsubscribeVisitas = listenVisitasRango(inicio, fin, (visitas) => {
       visitasCache = visitas;
       render();
+    });
+    unsubscribeContactos = listenContactosRango(inicio, fin, (contactos) => {
+      contactosCache = contactos;
+      renderLlamadas();
     });
   }
 
@@ -34,19 +44,28 @@ export function initMensual() {
       filtradas.length === 0
         ? `<div class="empty-state"><div class="glyph">📋</div>Sin visitas registradas este mes${filtro !== "Todas" ? " para " + filtro : ""}.</div>`
         : filtradas.map(itemHtml).join("");
-    renderChart(visitasCache);
+    renderChart(visitasCache, "grafico-pastel", "leyenda-pastel", (c) => (chart = c), () => chart);
   }
 
-  function renderChart(visitas) {
+  function renderLlamadas() {
+    const filtradas = filtro === "Todas" ? contactosCache : contactosCache.filter((c) => c.iglesia === filtro);
+    listaLlamadasEl.innerHTML =
+      filtradas.length === 0
+        ? `<div class="empty-state"><div class="glyph">📞</div>Sin llamadas o mensajes registrados este mes${filtro !== "Todas" ? " para " + filtro : ""}.</div>`
+        : filtradas.map(itemHtmlLlamada).join("");
+    renderChart(contactosCache, "grafico-pastel-llamadas", "leyenda-pastel-llamadas", (c) => (chartLlamadas = c), () => chartLlamadas);
+  }
+
+  function renderChart(items, canvasId, leyendaId, setChart, getChart) {
     const counts = { "Molinuevo": 0, "Luz de Ozama": 0, "Effatá": 0 };
-    visitas.forEach((v) => { if (counts[v.iglesia] !== undefined) counts[v.iglesia]++; });
+    items.forEach((v) => { if (counts[v.iglesia] !== undefined) counts[v.iglesia]++; });
     const labels = Object.keys(counts);
     const data = labels.map((l) => counts[l]);
     const total = data.reduce((a, b) => a + b, 0);
-    const leyendaEl = document.getElementById("leyenda-pastel");
-    const canvas = document.getElementById("grafico-pastel");
+    const leyendaEl = document.getElementById(leyendaId);
+    const canvas = document.getElementById(canvasId);
 
-    if (chart) { chart.destroy(); chart = null; }
+    if (getChart()) { getChart().destroy(); setChart(null); }
 
     if (total === 0) {
       canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
@@ -54,14 +73,14 @@ export function initMensual() {
       return;
     }
 
-    chart = new Chart(canvas, {
+    setChart(new Chart(canvas, {
       type: "pie",
       data: {
         labels,
         datasets: [{ data, backgroundColor: labels.map((l) => COLORES[l]), borderWidth: 2, borderColor: "#fff" }],
       },
       options: { plugins: { legend: { display: false } }, responsive: false },
-    });
+    }));
 
     leyendaEl.innerHTML = labels
       .map((l, i) => `
@@ -86,6 +105,20 @@ export function initMensual() {
     `;
   }
 
+  function itemHtmlLlamada(c) {
+    const esLlamada = c.tipo === "llamada";
+    return `
+      <li class="visit-item">
+        <span class="church-dot ${colorClaseIglesia(c.iglesia)}"></span>
+        <div class="info">
+          <div class="name">${escapeHtml(c.nombre || "(sin nombre)")}</div>
+          <div class="meta">${escapeHtml(c.iglesia)} · ${formatearFecha(c.fecha)}</div>
+        </div>
+        <span class="badge badge-${esLlamada ? "pendiente" : "en_progreso"}">${esLlamada ? "📞 Llamada" : "💬 Mensaje"}</span>
+      </li>
+    `;
+  }
+
   listaEl.addEventListener("click", (e) => {
     const li = e.target.closest(".visit-item");
     if (!li) return;
@@ -99,6 +132,16 @@ export function initMensual() {
       tab.classList.add("active");
       filtro = tab.dataset.value;
       render();
+      renderLlamadas();
+    });
+  });
+
+  document.querySelectorAll("#mensual-subtabs .church-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#mensual-subtabs .church-tab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      document.querySelectorAll(".mensual-subview").forEach((v) => v.classList.remove("active"));
+      document.getElementById(`subview-mensual-${tab.dataset.subview}`).classList.add("active");
     });
   });
 

@@ -220,20 +220,46 @@
         </div>
       </div>
 
-      <div class="split-view">
-        <div class="card">
-          <div class="page-header">
-            <h2>Visitas del mes</h2>
-          </div>
-          <ul class="visit-list" id="lista-mensual"></ul>
-        </div>
+      <div class="church-tabs" id="mensual-subtabs" style="margin-bottom:14px;">
+        <div class="church-tab active" data-subview="visitas">Visitas</div>
+        <div class="church-tab" data-subview="llamadas">Llamadas y mensajes</div>
+      </div>
 
-        <div class="card chart-wrap">
-          <div class="page-header" style="align-self:flex-start;">
-            <h2>Distribución</h2>
+      <div class="mensual-subview active" id="subview-mensual-visitas">
+        <div class="split-view">
+          <div class="card">
+            <div class="page-header">
+              <h2>Visitas del mes</h2>
+            </div>
+            <ul class="visit-list" id="lista-mensual"></ul>
           </div>
-          <canvas id="grafico-pastel" width="220" height="220"></canvas>
-          <div class="legend-row" id="leyenda-pastel"></div>
+
+          <div class="card chart-wrap">
+            <div class="page-header" style="align-self:flex-start;">
+              <h2>Distribución</h2>
+            </div>
+            <canvas id="grafico-pastel" width="220" height="220"></canvas>
+            <div class="legend-row" id="leyenda-pastel"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mensual-subview" id="subview-mensual-llamadas">
+        <div class="split-view">
+          <div class="card">
+            <div class="page-header">
+              <h2>Llamadas y mensajes del mes</h2>
+            </div>
+            <ul class="visit-list" id="lista-llamadas-mensual"></ul>
+          </div>
+
+          <div class="card chart-wrap">
+            <div class="page-header" style="align-self:flex-start;">
+              <h2>Distribución</h2>
+            </div>
+            <canvas id="grafico-pastel-llamadas" width="220" height="220"></canvas>
+            <div class="legend-row" id="leyenda-pastel-llamadas"></div>
+          </div>
         </div>
       </div>
 

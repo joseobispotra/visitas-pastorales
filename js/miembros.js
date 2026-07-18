@@ -8,6 +8,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  where,
   serverTimestamp,
   Timestamp,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -17,6 +18,7 @@ import { mostrarToast } from "./toast.js";
 import { escapeHtml } from "./util.js";
 
 const col = collection(db, "miembros");
+const contactosCol = collection(db, "contactos");
 let miembrosCache = [];
 
 function mapDoc(d) {
@@ -81,16 +83,36 @@ export async function obtenerOCrearMiembro({ nombre, telefono, direccion, iglesi
 }
 
 /** Registra una llamada o mensaje con un miembro (visitado o no) y, opcionalmente,
- * programa la fecha del próximo contacto para que aparezca en el recordatorio de Hoy. */
+ * programa la fecha del próximo contacto para que aparezca en el recordatorio de Hoy.
+ * Además guarda un registro histórico en "contactos" para las estadísticas mensuales. */
 export async function registrarContacto(id, { tipo, notas, proximoContacto }) {
+  const miembro = miembrosCache.find((m) => m.id === id);
+  const fecha = Timestamp.fromDate(new Date());
+
+  await addDoc(contactosCol, {
+    miembroId: id,
+    nombre: miembro?.nombre || "",
+    iglesia: miembro?.iglesia || "",
+    tipo,
+    notas: notas || "",
+    fecha,
+  });
+
   return actualizarMiembro(id, {
-    ultimoContacto: {
-      tipo,
-      fecha: Timestamp.fromDate(new Date()),
-      notas: notas || "",
-    },
+    ultimoContacto: { tipo, fecha, notas: notas || "" },
     proximoContacto: proximoContacto ? Timestamp.fromDate(proximoContacto) : null,
   });
+}
+
+/** Llamadas/mensajes registrados en un rango de fechas, para la vista mensual. */
+export function listenContactosRango(inicio, fin, callback) {
+  const q = query(
+    contactosCol,
+    where("fecha", ">=", Timestamp.fromDate(inicio)),
+    where("fecha", "<=", Timestamp.fromDate(fin)),
+    orderBy("fecha", "desc")
+  );
+  return onSnapshot(q, (snap) => callback(snap.docs.map(mapDoc)));
 }
 
 function diasDesde(fecha) {
