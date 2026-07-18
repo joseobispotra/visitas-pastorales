@@ -17,10 +17,12 @@
 
 <div class="app-shell" id="app-shell" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="crest">🐑</span> Visitas Pastorales</div>
+    <div class="brand"><span class="crest">🐑</span> Visitas Pastorales <span class="brand-sub">— José Obispo</span></div>
     <nav id="nav-links">
       <a href="#/hoy" data-route="hoy">Hoy</a>
       <a href="#/agendar" data-route="agendar">Agendar</a>
+      <a href="#/miembros" data-route="miembros">Miembros</a>
+      <a href="#/oracion" data-route="oracion">Oración</a>
       <a href="#/mensual" data-route="mensual">Mensual</a>
     </nav>
     <button class="logout-btn" id="logout-btn" type="button">Salir</button>
@@ -30,20 +32,37 @@
     <!-- HOY -->
     <section id="view-hoy" class="view">
       <div class="hero-today">
-        <p class="eyebrow" id="saludo-eyebrow">Hola</p>
-        <h2 id="fecha-hoy">—</h2>
-        <p class="date-line" id="resumen-hoy-line">Cargando tu día…</p>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div>
+            <p class="eyebrow" id="saludo-eyebrow">Hola</p>
+            <h2 id="fecha-hoy">—</h2>
+            <p class="date-line" id="resumen-hoy-line">Cargando tu día…</p>
+          </div>
+          <a href="#/agendar" class="btn btn-primary" style="width:auto;white-space:nowrap;">+ Nueva visita</a>
+        </div>
         <div class="stat-row" id="stat-row"></div>
       </div>
 
       <div id="notif-banner-slot"></div>
 
+      <div class="card verse-card" id="verse-card"></div>
+
+      <div id="seguimiento-card-slot"></div>
+
       <div class="card">
         <div class="page-header">
-          <h2>Hoy debes visitar</h2>
+          <h2>Pendientes hoy</h2>
           <p>Visitas agendadas para hoy en las tres iglesias</p>
         </div>
-        <ul class="visit-list" id="lista-hoy"></ul>
+        <ul class="visit-list" id="lista-hoy-pendientes"></ul>
+      </div>
+
+      <div class="card">
+        <div class="page-header">
+          <h2>Completadas hoy</h2>
+          <p>Tu reporte de lo que ya realizaste hoy</p>
+        </div>
+        <ul class="visit-list" id="lista-hoy-completadas"></ul>
       </div>
     </section>
 
@@ -72,6 +91,12 @@
             <div class="form-field">
               <label for="hora">Hora</label>
               <input type="time" id="hora" required>
+            </div>
+
+            <div class="form-field full">
+              <label for="miembro-buscar">Feligrés registrado (opcional)</label>
+              <input type="text" id="miembro-buscar" list="miembros-datalist" placeholder="Escribe para buscar en tu directorio de miembros...">
+              <datalist id="miembros-datalist"></datalist>
             </div>
 
             <div class="form-field">
@@ -123,6 +148,44 @@
       </div>
     </section>
 
+    <!-- MIEMBROS -->
+    <section id="view-miembros" class="view">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+        <div>
+          <h2>Miembros</h2>
+          <p>Directorio de feligreses que vas visitando</p>
+        </div>
+        <button type="button" class="btn btn-solid" id="btn-nuevo-miembro" style="width:auto;">+ Nuevo miembro</button>
+      </div>
+      <div class="card">
+        <ul class="visit-list" id="lista-miembros"></ul>
+      </div>
+    </section>
+
+    <!-- ORACIÓN -->
+    <section id="view-oracion" class="view">
+      <div class="page-header">
+        <h2>Peticiones de oración</h2>
+        <p>Anota y da seguimiento a las peticiones de tu congregación</p>
+      </div>
+      <div class="card">
+        <form id="form-peticion" class="form-grid" style="margin-bottom:18px;">
+          <div class="form-field full">
+            <label for="peticion-texto">Petición</label>
+            <input type="text" id="peticion-texto" placeholder="Ej. Salud de la hermana Rosa" required>
+          </div>
+          <div class="form-field">
+            <label for="peticion-de-quien">De quién (opcional)</label>
+            <input type="text" id="peticion-de-quien" placeholder="Nombre">
+          </div>
+          <div class="form-field" style="justify-content:flex-end;display:flex;">
+            <button type="submit" class="btn btn-solid" style="margin-top:auto;">Agregar petición</button>
+          </div>
+        </form>
+        <ul class="visit-list" id="lista-oracion"></ul>
+      </div>
+    </section>
+
     <!-- MENSUAL -->
     <section id="view-mensual" class="view">
       <div class="page-header">
@@ -166,6 +229,8 @@
   <nav class="tabbar" id="tabbar">
     <a href="#/hoy" data-route="hoy"><span class="fab-icon">🏠</span>Hoy</a>
     <a href="#/agendar" data-route="agendar"><span class="fab-icon">➕</span>Agendar</a>
+    <a href="#/miembros" data-route="miembros"><span class="fab-icon">👤</span>Miembros</a>
+    <a href="#/oracion" data-route="oracion"><span class="fab-icon">🙏</span>Oración</a>
     <a href="#/mensual" data-route="mensual"><span class="fab-icon">📊</span>Mensual</a>
   </nav>
 </div>
@@ -186,6 +251,8 @@
 <script type="module" src="js/firebase-config.js"></script>
 <script type="module" src="js/visitas.js"></script>
 <script type="module" src="js/modal.js"></script>
+<script type="module" src="js/miembros.js"></script>
+<script type="module" src="js/peticiones.js"></script>
 <script type="module" src="js/dashboard.js"></script>
 <script type="module" src="js/mensual.js"></script>
 <script type="module" src="js/notificaciones.js"></script>

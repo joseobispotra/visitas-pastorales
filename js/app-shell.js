@@ -3,9 +3,11 @@ import { initDashboard } from "./dashboard.js";
 import { initMensual } from "./mensual.js";
 import { initNotificaciones } from "./notificaciones.js";
 import { crearVisita } from "./visitas.js";
+import { initMiembros, obtenerMiembrosCache } from "./miembros.js";
+import { initPeticiones } from "./peticiones.js";
 import { mostrarToast } from "./toast.js";
 
-const ROUTES = ["hoy", "agendar", "mensual"];
+const ROUTES = ["hoy", "agendar", "miembros", "oracion", "mensual"];
 let inicializado = false;
 
 requerirSesion(async () => {
@@ -16,6 +18,8 @@ requerirSesion(async () => {
 
   initDashboard();
   initMensual();
+  initMiembros();
+  initPeticiones();
   initNotificaciones();
   wireRouting();
   wireLogout();
@@ -49,7 +53,9 @@ function wireFormAgendar() {
   const tabs = document.querySelectorAll("#iglesia-tabs .church-tab");
   const chkSeguimiento = document.getElementById("requiere-seguimiento");
   const fechaSeguimiento = document.getElementById("fecha-seguimiento");
+  const miembroBuscar = document.getElementById("miembro-buscar");
   let iglesiaSeleccionada = null;
+  let miembroSeleccionadoId = null;
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -57,6 +63,22 @@ function wireFormAgendar() {
       tab.classList.add("active");
       iglesiaSeleccionada = tab.dataset.value;
     });
+  });
+
+  miembroBuscar.addEventListener("input", () => {
+    const miembro = obtenerMiembrosCache().find(
+      (m) => `${m.nombre} — ${m.iglesia}` === miembroBuscar.value
+    );
+    if (!miembro) {
+      miembroSeleccionadoId = null;
+      return;
+    }
+    miembroSeleccionadoId = miembro.id;
+    document.getElementById("nombre").value = miembro.nombre;
+    document.getElementById("telefono").value = miembro.telefono || "";
+    document.getElementById("direccion").value = miembro.direccion || "";
+    tabs.forEach((t) => t.classList.toggle("active", t.dataset.value === miembro.iglesia));
+    iglesiaSeleccionada = miembro.iglesia;
   });
 
   chkSeguimiento.addEventListener("change", () => {
@@ -103,12 +125,14 @@ function wireFormAgendar() {
         notas: document.getElementById("notas").value.trim(),
         requiereSeguimiento: chkSeguimiento.checked,
         fechaSeguimiento: fechaSeguimientoDate,
+        miembroId: miembroSeleccionadoId,
       });
 
       mostrarToast("Visita agendada.");
       form.reset();
       tabs.forEach((t) => t.classList.remove("active"));
       iglesiaSeleccionada = null;
+      miembroSeleccionadoId = null;
       fechaSeguimiento.style.display = "none";
       location.hash = "#/hoy";
     } catch (err) {

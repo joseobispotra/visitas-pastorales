@@ -178,15 +178,20 @@ button { font-family: inherit; }
   display: flex; align-items: center; justify-content: center;
   font-size: 16px;
 }
+.topbar .brand-sub { font-weight: 400; color: rgba(255,255,255,0.75); }
+@media (max-width: 980px) {
+  .topbar .brand-sub { display: none; }
+}
 .topbar nav {
-  display: flex; gap: 4px;
+  display: flex; gap: 2px;
 }
 .topbar nav a {
   text-decoration: none;
   color: rgba(255,255,255,0.7);
-  font-size: 14px;
-  padding: 8px 14px;
+  font-size: 13.5px;
+  padding: 8px 11px;
   border-radius: 10px;
+  white-space: nowrap;
   transition: background .15s, color .15s;
 }
 .topbar nav a.active, .topbar nav a:hover {
@@ -409,13 +414,18 @@ button { font-family: inherit; }
 .tabbar a {
   text-decoration: none;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 10px;
+  flex: 1;
+  min-width: 0;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
-  padding: 4px 10px;
+  padding: 4px 2px;
   border-radius: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .tabbar a.active { color: var(--navy); font-weight: 600; }
-.tabbar .fab-icon { font-size: 18px; }
+.tabbar .fab-icon { font-size: 17px; }
 
 @media (max-width: 720px) {
   .topbar nav { display: none; }
@@ -489,3 +499,51 @@ button { font-family: inherit; }
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   color: var(--ink-soft); font-size: 14px;
 }
+
+/* ---------- Versículo del día ---------- */
+.verse-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  background: linear-gradient(120deg, var(--cream-dim), var(--white));
+  border: 1px solid #ecd6a3;
+}
+.verse-icon { font-size: 22px; }
+.verse-text {
+  margin: 0;
+  font-size: 15.5px;
+  font-style: italic;
+  color: var(--ink);
+  max-width: 640px;
+  line-height: 1.5;
+}
+.verse-ref {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--gold);
+}
+.verse-copyright {
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+/* ---------- WhatsApp ---------- */
+.btn-whatsapp {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #25d366;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.btn-whatsapp:hover { background: #1ebc59; }
+.btn-whatsapp::before { content: "💬"; }

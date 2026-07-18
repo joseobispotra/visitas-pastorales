@@ -62,6 +62,7 @@ export async function crearVisita(datos) {
       telefono: datos.telefono || "",
       direccion: datos.direccion || "",
     },
+    miembroId: datos.miembroId || null,
     motivo: datos.motivo || "",
     notas: datos.notas || "",
     estado: "pendiente",
@@ -74,6 +75,13 @@ export async function crearVisita(datos) {
     creadoEn: serverTimestamp(),
     actualizadoEn: serverTimestamp(),
   });
+}
+
+/** Visitas con seguimiento activo (para el recordatorio diario de WhatsApp). Un solo
+ * filtro de igualdad, así que no requiere ningún índice compuesto en Firestore. */
+export function listenSeguimientosPendientes(callback) {
+  const q = query(col, where("seguimiento.requiere", "==", true));
+  return onSnapshot(q, (snap) => callback(snap.docs.map(mapDoc)));
 }
 
 export async function actualizarVisita(id, datos) {
