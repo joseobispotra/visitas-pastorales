@@ -547,3 +547,26 @@ button { font-family: inherit; }
 }
 .btn-whatsapp:hover { background: #1ebc59; }
 .btn-whatsapp::before { content: "💬"; }
+
+.btn-llamar {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--navy);
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.btn-llamar:hover { background: rgba(22,33,62,0.06); }
+.btn-llamar::before { content: "📞"; }
+
+.ultimo-contacto {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}

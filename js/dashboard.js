@@ -8,12 +8,15 @@ import {
   colorClaseIglesia,
 } from "./visitas.js";
 import { abrirDetalleVisita } from "./modal.js";
+import { listenMiembros } from "./miembros.js";
 import { mostrarToast } from "./toast.js";
 import { escapeHtml, saludoSegunHora, fechaLarga } from "./util.js";
 import { notificarVisitasHoy } from "./notificaciones.js";
 import { versiculoDeHoy } from "./versiculos.js";
 
 let visitasHoyCache = [];
+let seguimientosVisitasCache = [];
+let miembrosContactoCache = [];
 
 export function initDashboard() {
   document.getElementById("saludo-eyebrow").textContent = saludoSegunHora();
@@ -65,7 +68,14 @@ export function initDashboard() {
     `;
   });
 
-  listenSeguimientosPendientes(renderSeguimientoHoy);
+  listenSeguimientosPendientes((visitas) => {
+    seguimientosVisitasCache = visitas;
+    renderRecordatorioContacto();
+  });
+  listenMiembros((miembros) => {
+    miembrosContactoCache = miembros;
+    renderRecordatorioContacto();
+  });
 }
 
 function wireLista(listaEl) {
@@ -101,17 +111,35 @@ function telefonoWhatsApp(telefono) {
   return digitos.length === 10 ? `1${digitos}` : digitos;
 }
 
-function renderSeguimientoHoy(visitas) {
-  const hoyStr = new Date().toDateString();
-  const deHoy = visitas.filter((v) => {
-    const f = v.seguimiento?.fecha;
-    if (!f) return false;
-    const d = f.toDate ? f.toDate() : new Date(f);
-    return d.toDateString() === hoyStr;
-  });
+function esHoy(fecha) {
+  if (!fecha) return false;
+  const d = fecha.toDate ? fecha.toDate() : new Date(fecha);
+  return d.toDateString() === new Date().toDateString();
+}
 
+function renderRecordatorioContacto() {
+  const deVisitas = seguimientosVisitasCache
+    .filter((v) => esHoy(v.seguimiento?.fecha))
+    .map((v) => ({
+      nombre: v.feligres?.nombre,
+      telefono: v.feligres?.telefono,
+      iglesia: v.iglesia,
+      detalle: v.motivo || "Seguimiento de visita",
+    }));
+
+  const deMiembros = miembrosContactoCache
+    .filter((m) => esHoy(m.proximoContacto))
+    .map((m) => ({
+      nombre: m.nombre,
+      telefono: m.telefono,
+      iglesia: m.iglesia,
+      detalle: "Contacto programado",
+    }));
+
+  const todos = [...deVisitas, ...deMiembros];
   const slot = document.getElementById("seguimiento-card-slot");
-  if (deHoy.length === 0) {
+
+  if (todos.length === 0) {
     slot.innerHTML = "";
     return;
   }
@@ -119,31 +147,32 @@ function renderSeguimientoHoy(visitas) {
   slot.innerHTML = `
     <div class="card">
       <div class="page-header">
-        <h2>Seguimiento de hoy</h2>
-        <p>Recuerda escribirles hoy para darles seguimiento</p>
+        <h2>Hoy debes contactar</h2>
+        <p>Recuerda llamarles o escribirles hoy</p>
       </div>
       <ul class="visit-list">
-        ${deHoy.map(seguimientoItemHtml).join("")}
+        ${todos.map(contactoItemHtml).join("")}
       </ul>
     </div>
   `;
 }
 
-function seguimientoItemHtml(v) {
-  const numero = telefonoWhatsApp(v.feligres?.telefono);
-  const mensaje = `Hola ${v.feligres?.nombre || ""}, Dios te bendiga. Quería saber cómo estás, estoy orando por ti.`;
+function contactoItemHtml(c) {
+  const numeroWa = telefonoWhatsApp(c.telefono);
+  const numeroTel = (c.telefono || "").replace(/\D/g, "");
+  const mensaje = `Hola ${c.nombre || ""}, Dios te bendiga. Quería saber cómo estás, estoy orando por ti.`;
   return `
     <li class="visit-item">
-      <span class="church-dot ${colorClaseIglesia(v.iglesia)}"></span>
+      <span class="church-dot ${colorClaseIglesia(c.iglesia)}"></span>
       <div class="info">
-        <div class="name">${escapeHtml(v.feligres?.nombre || "(sin nombre)")}</div>
-        <div class="meta">${escapeHtml(v.iglesia)} · ${escapeHtml(v.motivo || "")}</div>
+        <div class="name">${escapeHtml(c.nombre || "(sin nombre)")}</div>
+        <div class="meta">${escapeHtml(c.iglesia || "")} · ${escapeHtml(c.detalle)}</div>
       </div>
-      ${
-        numero
-          ? `<a class="btn btn-whatsapp" href="https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}" target="_blank" rel="noopener">WhatsApp</a>`
-          : `<span class="meta">Sin teléfono</span>`
-      }
+      <div class="actions" style="gap:6px;">
+        ${numeroTel ? `<a class="btn btn-outline btn-llamar" href="tel:${numeroTel}">Llamar</a>` : ""}
+        ${numeroWa ? `<a class="btn btn-whatsapp" href="https://wa.me/${numeroWa}?text=${encodeURIComponent(mensaje)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
+        ${!numeroTel && !numeroWa ? `<span class="meta">Sin teléfono</span>` : ""}
+      </div>
     </li>
   `;
 }

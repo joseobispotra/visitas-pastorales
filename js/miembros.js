@@ -9,6 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  Timestamp,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { IGLESIAS, colorClaseIglesia } from "./visitas.js";
 import { cerrarModal } from "./modal.js";
@@ -79,6 +80,27 @@ export async function obtenerOCrearMiembro({ nombre, telefono, direccion, iglesi
   return nuevo.id;
 }
 
+/** Registra una llamada o mensaje con un miembro (visitado o no) y, opcionalmente,
+ * programa la fecha del próximo contacto para que aparezca en el recordatorio de Hoy. */
+export async function registrarContacto(id, { tipo, notas, proximoContacto }) {
+  return actualizarMiembro(id, {
+    ultimoContacto: {
+      tipo,
+      fecha: Timestamp.fromDate(new Date()),
+      notas: notas || "",
+    },
+    proximoContacto: proximoContacto ? Timestamp.fromDate(proximoContacto) : null,
+  });
+}
+
+function diasDesde(fecha) {
+  const d = fecha?.toDate ? fecha.toDate() : new Date(fecha);
+  const dias = Math.floor((Date.now() - d.getTime()) / 86400000);
+  if (dias <= 0) return "hoy";
+  if (dias === 1) return "ayer";
+  return `hace ${dias} días`;
+}
+
 export function initMiembros() {
   const listaEl = document.getElementById("lista-miembros");
 
@@ -95,19 +117,33 @@ export function initMiembros() {
     const li = e.target.closest(".visit-item");
     if (!li) return;
     const miembro = miembrosCache.find((m) => m.id === li.dataset.id);
-    if (miembro) abrirFormularioMiembro(miembro);
+    if (!miembro) return;
+
+    const btn = e.target.closest("[data-action]");
+    if (btn?.dataset.action === "contacto") {
+      abrirFormularioContacto(miembro);
+    } else {
+      abrirFormularioMiembro(miembro);
+    }
   });
 }
 
 function itemHtml(m) {
+  const ultimoTexto = m.ultimoContacto
+    ? `Último contacto: ${diasDesde(m.ultimoContacto.fecha)} (${m.ultimoContacto.tipo === "llamada" ? "llamada" : "mensaje"})`
+    : "";
   return `
     <li class="visit-item" data-id="${m.id}">
       <span class="church-dot ${colorClaseIglesia(m.iglesia)}"></span>
       <div class="info">
         <div class="name">${escapeHtml(m.nombre)}</div>
         <div class="meta">${escapeHtml(m.iglesia)}${m.telefono ? " · " + escapeHtml(m.telefono) : ""}</div>
+        ${ultimoTexto ? `<div class="meta ultimo-contacto">${ultimoTexto}</div>` : ""}
       </div>
-      <div class="actions"><button class="icon-btn" data-action="editar">✎</button></div>
+      <div class="actions">
+        <button class="icon-btn" data-action="contacto" title="Registrar contacto">📞</button>
+        <button class="icon-btn" data-action="editar" title="Editar">✎</button>
+      </div>
     </li>
   `;
 }
@@ -183,6 +219,68 @@ function abrirFormularioMiembro(miembro = null) {
     if (!confirm(`¿Eliminar a ${miembro.nombre} del directorio?`)) return;
     await eliminarMiembro(miembro.id);
     mostrarToast("Miembro eliminado.");
+    cerrarModal();
+  });
+
+  document.getElementById("modal-backdrop").classList.add("open");
+}
+
+function abrirFormularioContacto(miembro) {
+  document.getElementById("modal-titulo").textContent = `Registrar contacto — ${miembro.nombre}`;
+  document.getElementById("modal-body").innerHTML = `
+    <div class="form-grid">
+      <div class="form-field full">
+        <label>Tipo de contacto</label>
+        <div class="church-tabs" id="c-tipo-tabs">
+          <div class="church-tab active" data-value="llamada">📞 Llamada</div>
+          <div class="church-tab" data-value="mensaje">💬 Mensaje</div>
+        </div>
+      </div>
+      <div class="form-field full">
+        <label>Notas (opcional)</label>
+        <textarea id="c-notas" placeholder="¿De qué hablaron?"></textarea>
+      </div>
+      <div class="form-field full">
+        <div class="check-row">
+          <input type="checkbox" id="c-programar">
+          <label for="c-programar" style="margin:0;font-weight:400;">Programar próximo contacto</label>
+        </div>
+        <input type="date" id="c-proxima-fecha" style="margin-top:8px;display:none;">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-solid" id="c-guardar">Guardar contacto</button>
+    </div>
+  `;
+
+  let tipoSel = "llamada";
+  document.querySelectorAll("#c-tipo-tabs .church-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll("#c-tipo-tabs .church-tab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      tipoSel = tab.dataset.value;
+    });
+  });
+
+  const chk = document.getElementById("c-programar");
+  const fechaInput = document.getElementById("c-proxima-fecha");
+  chk.addEventListener("change", () => {
+    fechaInput.style.display = chk.checked ? "block" : "none";
+    if (!chk.checked) fechaInput.value = "";
+  });
+
+  document.getElementById("c-guardar").addEventListener("click", async () => {
+    let proximoContacto = null;
+    if (chk.checked && fechaInput.value) {
+      const [y, m, d] = fechaInput.value.split("-").map(Number);
+      proximoContacto = new Date(y, m - 1, d);
+    }
+    await registrarContacto(miembro.id, {
+      tipo: tipoSel,
+      notas: document.getElementById("c-notas").value.trim(),
+      proximoContacto,
+    });
+    mostrarToast("Contacto registrado.");
     cerrarModal();
   });
 
