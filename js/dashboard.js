@@ -4,12 +4,13 @@ import {
   listenSeguimientosPendientes,
   rangoMes,
   marcarCompletada,
+  actualizarVisita,
   formatearHora,
   formatearFecha,
   colorClaseIglesia,
 } from "./visitas.js";
 import { abrirDetalleVisita } from "./modal.js";
-import { listenMiembros } from "./miembros.js";
+import { listenMiembros, registrarContacto } from "./miembros.js";
 import { mostrarToast } from "./toast.js";
 import { escapeHtml, saludoSegunHora, fechaLarga } from "./util.js";
 import { notificarVisitasHoy } from "./notificaciones.js";
@@ -80,6 +81,7 @@ export function initDashboard() {
     miembrosContactoCache = miembros;
     renderRecordatorioContacto();
   });
+  wireRecordatorioContacto();
 }
 
 const ETIQUETAS_TIPO = {
@@ -196,6 +198,8 @@ function renderRecordatorioContacto() {
   const deVisitas = seguimientosVisitasCache
     .filter((v) => esHoy(v.seguimiento?.fecha))
     .map((v) => ({
+      origen: "visita",
+      refId: v.id,
       nombre: v.feligres?.nombre,
       telefono: v.feligres?.telefono,
       iglesia: v.iglesia,
@@ -205,6 +209,8 @@ function renderRecordatorioContacto() {
   const deMiembros = miembrosContactoCache
     .filter((m) => esHoy(m.proximoContacto))
     .map((m) => ({
+      origen: "miembro",
+      refId: m.id,
       nombre: m.nombre,
       telefono: m.telefono,
       iglesia: m.iglesia,
@@ -237,7 +243,7 @@ function contactoItemHtml(c) {
   const numeroTel = (c.telefono || "").replace(/\D/g, "");
   const mensaje = `Hola ${c.nombre || ""}, Dios te bendiga. Quería saber cómo estás, estoy orando por ti.`;
   return `
-    <li class="visit-item">
+    <li class="visit-item" data-origen="${c.origen}" data-ref-id="${c.refId}">
       <span class="church-dot ${colorClaseIglesia(c.iglesia)}"></span>
       <div class="info">
         <div class="name">${escapeHtml(c.nombre || "(sin nombre)")}</div>
@@ -247,9 +253,28 @@ function contactoItemHtml(c) {
         ${numeroTel ? `<a class="btn btn-outline btn-llamar" href="tel:${numeroTel}">Llamar</a>` : ""}
         ${numeroWa ? `<a class="btn btn-whatsapp" href="https://wa.me/${numeroWa}?text=${encodeURIComponent(mensaje)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
         ${!numeroTel && !numeroWa ? `<span class="meta">Sin teléfono</span>` : ""}
+        <button class="icon-btn" data-action="hecho" title="Marcar como realizado">✓</button>
       </div>
     </li>
   `;
+}
+
+function wireRecordatorioContacto() {
+  document.getElementById("seguimiento-card-slot").addEventListener("click", async (e) => {
+    const btn = e.target.closest('[data-action="hecho"]');
+    if (!btn) return;
+    const li = e.target.closest("[data-origen]");
+    const origen = li.dataset.origen;
+    const refId = li.dataset.refId;
+
+    if (origen === "visita") {
+      await actualizarVisita(refId, { "seguimiento.fecha": null });
+      mostrarToast("Seguimiento marcado como realizado.");
+    } else {
+      await registrarContacto(refId, { tipo: "llamada", notas: "", proximoContacto: null });
+      mostrarToast("Contacto marcado como realizado.");
+    }
+  });
 }
 
 function itemHtml(v) {
