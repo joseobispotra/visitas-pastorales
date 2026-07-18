@@ -307,7 +307,8 @@ button { font-family: inherit; }
 .visit-item {
   display: flex;
   align-items: center;
-  gap: 14px;
+  flex-wrap: wrap;
+  gap: 10px 14px;
   padding: 14px 16px;
   border-radius: 14px;
   background: var(--cream-dim);
@@ -322,7 +323,7 @@ button { font-family: inherit; }
 .dot-luz { background: #4c7a9e; }
 .dot-effata { background: #7a4c8e; }
 
-.visit-item .info { flex: 1; min-width: 0; }
+.visit-item .info { flex: 1 1 160px; min-width: 0; }
 .visit-item .info .name { font-weight: 600; font-size: 15px; }
 .visit-item .info .meta { font-size: 13px; color: var(--ink-soft); }
 .visit-item .time-badge {
@@ -332,8 +333,9 @@ button { font-family: inherit; }
   padding: 4px 10px;
   border-radius: 20px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
-.visit-item .actions { display: flex; gap: 6px; }
+.visit-item .actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: auto; }
 .icon-btn {
   border: none;
   background: rgba(0,0,0,0.05);
