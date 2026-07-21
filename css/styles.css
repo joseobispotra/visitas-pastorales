@@ -616,6 +616,13 @@ a.icon-btn { text-decoration: none; }
   margin-top: 2px;
 }
 
+.proximo-contacto {
+  font-size: 11.5px;
+  color: #8a5a1e;
+  margin-top: 2px;
+  font-weight: 600;
+}
+
 /* ---------- Gestión (Calendario / Junta / Tareas) ---------- */
 .gestion-subview { display: none; }
 .gestion-subview.active { display: block; animation: fadeIn .3s ease both; }

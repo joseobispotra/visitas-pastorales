@@ -12,7 +12,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { IGLESIAS, colorClaseIglesia } from "./visitas.js";
+import { IGLESIAS, colorClaseIglesia, formatearFecha } from "./visitas.js";
 import { cerrarModal } from "./modal.js";
 import { mostrarToast } from "./toast.js";
 import { escapeHtml, telefonoWhatsApp } from "./util.js";
@@ -104,6 +104,15 @@ export async function registrarContacto(id, { tipo, notas, proximoContacto }) {
   });
 }
 
+/** Agenda una llamada/mensaje futuro sin registrarlo como ya realizado
+ * (a diferencia de registrarContacto, que siempre asume que el contacto ya ocurrió). */
+export async function programarProximoContacto(id, { fecha, notas }) {
+  return actualizarMiembro(id, {
+    proximoContacto: Timestamp.fromDate(fecha),
+    notasProximoContacto: notas || "",
+  });
+}
+
 /** Llamadas/mensajes registrados en un rango de fechas, para la vista mensual. */
 export function listenContactosRango(inicio, fin, callback) {
   const q = query(
@@ -145,6 +154,8 @@ export function initMiembros() {
     if (btn?.dataset.action === "llamar" || btn?.dataset.action === "whatsapp") return;
     if (btn?.dataset.action === "contacto") {
       abrirFormularioContacto(miembro);
+    } else if (btn?.dataset.action === "programar") {
+      abrirFormularioProgramar(miembro);
     } else {
       abrirFormularioMiembro(miembro);
     }
@@ -155,6 +166,7 @@ function itemHtml(m) {
   const ultimoTexto = m.ultimoContacto
     ? `Último contacto: ${diasDesde(m.ultimoContacto.fecha)} (${m.ultimoContacto.tipo === "llamada" ? "llamada" : "mensaje"})`
     : "";
+  const proximoTexto = m.proximoContacto ? `Próxima llamada: ${formatearFecha(m.proximoContacto)}` : "";
   const numeroWa = telefonoWhatsApp(m.telefono);
   const numeroTel = (m.telefono || "").replace(/\D/g, "");
   const mensaje = `Hola ${m.nombre || ""}, soy el pastor. Quería saludarte y saber cómo estás. Dios te bendiga.`;
@@ -165,10 +177,12 @@ function itemHtml(m) {
         <div class="name">${escapeHtml(m.nombre)}</div>
         <div class="meta">${escapeHtml(m.iglesia)}${m.telefono ? " · " + escapeHtml(m.telefono) : ""}</div>
         ${ultimoTexto ? `<div class="meta ultimo-contacto">${ultimoTexto}</div>` : ""}
+        ${proximoTexto ? `<div class="meta proximo-contacto">${proximoTexto}</div>` : ""}
       </div>
       <div class="actions">
         ${numeroTel ? `<a class="btn btn-outline btn-llamar" data-action="llamar" href="tel:${numeroTel}">Llamar</a>` : ""}
         ${numeroWa ? `<a class="btn btn-whatsapp" data-action="whatsapp" href="https://wa.me/${numeroWa}?text=${encodeURIComponent(mensaje)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}
+        <button class="icon-btn" data-action="programar" title="Programar llamada">🗓️</button>
         <button class="icon-btn" data-action="contacto" title="Registrar contacto">📝</button>
         <button class="icon-btn" data-action="editar" title="Editar">✎</button>
       </div>
@@ -251,6 +265,55 @@ function abrirFormularioMiembro(miembro = null) {
   });
 
   document.getElementById("modal-backdrop").classList.add("open");
+}
+
+function abrirFormularioProgramar(miembro) {
+  document.getElementById("modal-titulo").textContent = `Programar llamada — ${miembro.nombre}`;
+  document.getElementById("modal-body").innerHTML = `
+    <div class="form-grid">
+      <div class="form-field full">
+        <label>Fecha</label>
+        <input type="date" id="p-fecha" value="${miembro.proximoContacto ? toDateInputValue(miembro.proximoContacto) : ""}">
+      </div>
+      <div class="form-field full">
+        <label>Notas (opcional)</label>
+        <textarea id="p-notas" placeholder="¿De qué quieres hablarle?">${escapeHtml(miembro.notasProximoContacto || "")}</textarea>
+      </div>
+    </div>
+    <div class="form-actions" style="justify-content:space-between;">
+      ${miembro.proximoContacto ? `<button type="button" class="btn btn-outline" id="p-quitar">Quitar programación</button>` : "<span></span>"}
+      <button type="button" class="btn btn-solid" id="p-guardar">Guardar</button>
+    </div>
+  `;
+
+  document.getElementById("p-guardar").addEventListener("click", async () => {
+    const fechaVal = document.getElementById("p-fecha").value;
+    if (!fechaVal) {
+      mostrarToast("Selecciona la fecha de la llamada.");
+      return;
+    }
+    const [y, mo, d] = fechaVal.split("-").map(Number);
+    await programarProximoContacto(miembro.id, {
+      fecha: new Date(y, mo - 1, d),
+      notas: document.getElementById("p-notas").value.trim(),
+    });
+    mostrarToast("Llamada programada.");
+    cerrarModal();
+  });
+
+  document.getElementById("p-quitar")?.addEventListener("click", async () => {
+    await actualizarMiembro(miembro.id, { proximoContacto: null, notasProximoContacto: "" });
+    mostrarToast("Programación eliminada.");
+    cerrarModal();
+  });
+
+  document.getElementById("modal-backdrop").classList.add("open");
+}
+
+function toDateInputValue(fecha) {
+  const d = fecha?.toDate ? fecha.toDate() : new Date(fecha);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function abrirFormularioContacto(miembro) {

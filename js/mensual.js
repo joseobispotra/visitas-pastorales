@@ -1,7 +1,8 @@
 import { listenVisitasRango, rangoMes, formatearFecha, colorClaseIglesia } from "./visitas.js";
-import { listenContactosRango } from "./miembros.js";
+import { listenContactosRango, listenMiembros, registrarContacto } from "./miembros.js";
 import { abrirDetalleVisita } from "./modal.js";
 import { listenPeticionesRespondidas } from "./peticiones.js";
+import { mostrarToast } from "./toast.js";
 import { escapeHtml, nombreMes } from "./util.js";
 
 const COLORES = { "Molinuevo": "#c9a35e", "Luz de Ozama": "#4c7a9e", "Effatá": "#7a4c8e" };
@@ -18,9 +19,12 @@ export function initMensual() {
   let chart = null;
   let chartLlamadas = null;
 
+  let miembrosProgramadosCache = [];
+
   const mesLabel = document.getElementById("mes-label");
   const listaEl = document.getElementById("lista-mensual");
   const listaLlamadasEl = document.getElementById("lista-llamadas-mensual");
+  const listaProgramadasEl = document.getElementById("lista-llamadas-programadas");
   const filtroTabs = document.querySelectorAll("#filtro-iglesia .church-tab");
 
   function cargarMes() {
@@ -157,6 +161,44 @@ export function initMensual() {
   });
 
   listenPeticionesRespondidas(renderOracionesRespondidas);
+
+  listenMiembros((miembros) => {
+    miembrosProgramadosCache = miembros
+      .filter((m) => m.proximoContacto)
+      .sort((a, b) => (a.proximoContacto?.toMillis?.() || 0) - (b.proximoContacto?.toMillis?.() || 0));
+    renderProgramadas();
+  });
+
+  function renderProgramadas() {
+    if (!listaProgramadasEl) return;
+    listaProgramadasEl.innerHTML =
+      miembrosProgramadosCache.length === 0
+        ? `<div class="empty-state"><div class="glyph">🗓️</div>No tienes llamadas programadas.</div>`
+        : miembrosProgramadosCache.map(itemHtmlProgramada).join("");
+  }
+
+  function itemHtmlProgramada(m) {
+    return `
+      <li class="visit-item" data-id="${m.id}">
+        <span class="church-dot ${colorClaseIglesia(m.iglesia)}"></span>
+        <div class="info">
+          <div class="name">${escapeHtml(m.nombre)}</div>
+          <div class="meta">${escapeHtml(m.iglesia)} · Programada: ${formatearFecha(m.proximoContacto)}</div>
+        </div>
+        <button class="icon-btn" data-action="hecho" title="Marcar como realizado">✓</button>
+      </li>
+    `;
+  }
+
+  listaProgramadasEl?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-action]");
+    const li = e.target.closest(".visit-item");
+    if (!btn || !li) return;
+    if (btn.dataset.action === "hecho") {
+      await registrarContacto(li.dataset.id, { tipo: "llamada", notas: "", proximoContacto: null });
+      mostrarToast("Contacto registrado.");
+    }
+  });
 
   cargarMes();
 }
